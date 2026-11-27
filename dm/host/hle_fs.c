@@ -879,15 +879,25 @@ static int user_save_dir(const void *uid, char *dd, size_t cap) {
     char b[1024]; strlcpy(b, d, sizeof b); size_t L = strlen(b); while (L > 1 && b[L - 1] == '/') b[--L] = 0;   // strip trailing slashes (.work / .new are appended at the same level)
     return dm_account_save_dir(uid, b, dd, cap);
 }
-static int user_save_exists(const void *uid) {   // the first user's save exists from the game's point of view (made at mount, as before); another user's once EnsureSaveData made it
-    char dd[1024]; if (user_save_dir(uid, dd, sizeof dd)) return 1;
-    struct stat st; return stat(dd, &st) == 0 && S_ISDIR(st.st_mode);
+// PEANUTS begin: answer IsSaveDataExisting truthfully for an empty first-user save dir and create it in EnsureSaveData (RE Engine / MMSF LC)
+static int save_dir_has_entries(const char *dd) {   // one opendir/readdir pass: does anything beside . and .. live in the directory
+    DIR *d = opendir(dd); if (!d) return 0;
+    struct dirent *e; int has = 0;
+    while ((e = readdir(d))) if (strcmp(e->d_name, ".") && strcmp(e->d_name, "..")) { has = 1; break; }
+    closedir(d);
+    return has;
 }
-HLE_FORCE("_ZN2nn2fs14EnsureSaveDataERKNS_7account3UidE", "fsp-srv; the user's save directory (the first user's is made at mount time)", Result, h_fs_EnsureSave, const void *uid) {
-    char dd[1024];
-    if (!user_save_dir(uid, dd, sizeof dd) && mkdir(dd, 0755) == 0) LOG("fs save data of another user made: %s", dd);
+static int user_save_exists(const void *uid) {
+    char dd[1024]; int first = user_save_dir(uid, dd, sizeof dd);
+    struct stat st; if (stat(dd, &st) != 0 || !S_ISDIR(st.st_mode)) return 0;
+    return !first || save_dir_has_entries(dd);   // another user's: the directory EnsureSaveData made is the whole save, empty or not
+}
+HLE_FORCE("_ZN2nn2fs14EnsureSaveDataERKNS_7account3UidE", "fsp-srv; the user's save directory, made here on demand", Result, h_fs_EnsureSave, const void *uid) {
+    char dd[1024]; (void)user_save_dir(uid, dd, sizeof dd);
+    if (mkdir(dd, 0755) == 0) LOG("fs save data made: %s", dd);
     return RES_OK;
 }
+// PEANUTS end
 // Another application's save data (Tears of the Kingdom asks by application ID and would mount it read-only): the host keeps only this game's own saves, one per user
 HLE_FORCE("_ZN2nn2fs18IsSaveDataExistingENS_13ApplicationIdERKNS_7account3UidE", "fsp-srv; only this game's own save data exists, a user's once made", int, h_fs_SaveExisting, uint64_t app, const void *uid) {
     int r = app == DM_GAME_PROGRAM_ID && user_save_exists(uid);
@@ -1732,9 +1742,9 @@ HLE_FORCE("_ZN2nn2fs22GetDirectoryEntryCountEPlNS0_15DirectoryHandleE", "fsp-srv
     }
     closedir(d); *out = n; return RES_OK;
 }
-// Whether the user's save data exists: the first user's directory is created at mount time, so from the game's point of view it always exists; another user's once
+// PEANUTS: whether the user's save data exists: the first user's once its save has content, another user's once
 // EnsureSaveData made it. A game asks before it offers to make one (Super Mario Bros. Wonder keeps a save file per user)
-HLE_FORCE("_ZN2nn2fs18IsSaveDataExistingERKNS_7account3UidE", "fsp-srv; save data exists: the first user's always, another user's once made (returns bool)", unsigned, h_fs_SaveExists, const void *uid) { return (unsigned)user_save_exists(uid); }
+HLE_FORCE("_ZN2nn2fs18IsSaveDataExistingERKNS_7account3UidE", "fsp-srv; save data exists: the first user's once it has content, another user's once made (returns bool)", unsigned, h_fs_SaveExists, const void *uid) { return (unsigned)user_save_exists(uid); }
 // File system access log and thread priority: on the real device both ask fsp-srv (the access log switch lives in the service); the host has no access log and priority does not affect pread
 HLE_FORCE("_ZN2nn2fs26SetPriorityOnCurrentThreadENS0_8PriorityE", "fsp-srv; file read priority, ignored by the host", void, h_fs_SetPrio, int prio) { (void)prio; }
 HLE_FORCE("_ZN2nn2fs6detail18IsEnabledAccessLogEj", "fsp-srv; access log always off (returns bool)", unsigned, h_fs_AccessLogMask, unsigned mask) { (void)mask; return 0; }
