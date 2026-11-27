@@ -12,7 +12,7 @@ Capcom's *Mega Man Star Force Legacy Collection* (RE Engine, Havok, Wwise, SDK `
 
 ## Shaders
 
-14,603 RE Engine SDF shaders extracted from `re_chunk_000.pak` (`shader_split.py`), with 4,426 compute thread-group / shared-memory facts (`shader_facts.tsv`).
+14,604 RE Engine SDF shaders extracted from `re_chunk_000.pak` (`shader_split.py`), with 4,426 compute thread-group / shared-memory facts (`shader_facts.tsv`) and 16,384 vertex/pixel variation pairs (`shader_pairs.tsv`).
 
 ## Rewrite census
 

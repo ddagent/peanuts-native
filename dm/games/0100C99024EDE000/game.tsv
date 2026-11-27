@@ -2,7 +2,7 @@
 # Format: see dm/games/README.md
 # PEANUTS: a Peanuts Native profile (Banana Native has none for this title); whole file Peanuts' own
 # Capcom RE Engine (Havok, Wwise), SDK 20.5.15, NVN; modules main, subsdk0 (NintendoSDK_movie), and sdk.
-# The shaders are 14,603 RE Engine SDF entries in re_chunk_000.pak (shader_split.py).
+# The shaders are 14,604 RE Engine SDF entries in re_chunk_000.pak (shader_split.py).
 # Status: plays on Android (README.md).
 
 # ---- Identity ----
