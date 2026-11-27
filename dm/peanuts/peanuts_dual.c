@@ -323,6 +323,20 @@ static int dk_load(void) {
 }
 
 // Exact IEC 61966-2-1 linear->sRGB fragment shader for linear 1440x1080 3D battle RTTs (e.g. RE Engine RT 65).
+// Rebuilt byte-for-byte from the GLSL below with the NDK's glslc (same convention as vka_present_rot.h):
+//   glslc -O --target-env=vulkan1.1 -mfmt=num dual_srgb.frag -o -
+//
+//   dual_srgb.frag: #version 450
+//   dual_srgb.frag: layout(set = 0, binding = 0) uniform sampler2D tex;
+//   dual_srgb.frag: layout(location = 0) in vec2 uv;
+//   dual_srgb.frag: layout(location = 0) out vec4 o;
+//   dual_srgb.frag: void main() {
+//   dual_srgb.frag:     vec4 s = texture(tex, uv);
+//   dual_srgb.frag:     vec3 c = clamp(s.rgb, 0.0, 1.0);
+//   dual_srgb.frag:     vec3 lo = c * 12.92;
+//   dual_srgb.frag:     vec3 hi = 1.055 * pow(max(c, vec3(1e-5)), vec3(1.0 / 2.4)) - 0.055;
+//   dual_srgb.frag:     o = vec4(mix(lo, hi, greaterThan(c, vec3(0.0031308))), s.a);
+//   dual_srgb.frag: }
 static const uint32_t dual_srgb_frag[] = {
 0x07230203,0x00010300,0x000d000a,0x00000047,
 0x00000000,0x00020011,0x00000001,0x0006000b,
