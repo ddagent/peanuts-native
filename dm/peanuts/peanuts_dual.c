@@ -246,8 +246,8 @@ void pn_dual_frame_fill(uint64_t ticket) {
         out.comp_img = vka_tex_ref(g_rec.comp_img);
         if (out.comp_img) {
             out.top_from_comp = 1;
-            // Default Switch Big-Top-Left layout (0..1440, 0..1080); optional live override PN_DUAL_TRANSITION_UV=u0,v0,du,dv.
-            out.top_uv[0] = 0.0f; out.top_uv[1] = 0.0f; out.top_uv[2] = 1440.0f / 1920.0f; out.top_uv[3] = 1.0f;
+            // Default Switch Big-Top-Right layout (Bottom 0..480, Top 480..1920); optional live override PN_DUAL_TRANSITION_UV=u0,v0,du,dv.
+            out.top_uv[0] = 480.0f / 1920.0f; out.top_uv[1] = 0.0f; out.top_uv[2] = 1440.0f / 1920.0f; out.top_uv[3] = 1.0f;
             char ub[64] = {0};
             if (vka_env_str("PN_DUAL_TRANSITION_UV", ub, sizeof ub) && ub[0]) {
                 float u0, v0, du, dv;
